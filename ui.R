@@ -19,41 +19,48 @@ colors_many <- c("#E6194B","#3CB44B","#FFE119","#0082C8","#F58231","#911EB4","#4
 shinyUI(fluidPage(
 
   # Application title
-  titlePanel("Single cell data viewer"),
+  titlePanel("Mouse EAE single cell RNA-Seq data viewer"),
 
   # Sidebar with input files and data metrics
   sidebarLayout(
     sidebarPanel(
       selectInput("dataset", "Choose a dataset:", selected = names(data)[2],
                         list("All cells","Parenchyma & Perivascular Space","Meninges","Choroid Plexus","Blood")), 
-      textInput("gene",
-                 "Gene Expression Tsne - Enter Gene:", value = 'Cx3cr1'),
+      selectizeInput("gene", choices = colnames(data[[1]][[2]]),
+                 "Gene Expression Tsne - Enter Gene:", selected = 'Cx3cr1'),
       selectInput("plot_variable", "Choose a variable:",
                   list("Condition","Population","Subpopulation", "Cluster","Compartment")), 
         numericInput("cluster",
                 "Differential Gene Expression - Enter Cluster number:", value = 1, min = 1, max = , step=1), #max(as.numeric(data[[input$dataset]][[1]]$Cluster))
-      tableOutput('clusterTableUp'),
-      tableOutput('clusterTableDown')
+      #from url: https://groups.google.com/forum/#!topic/shiny-discuss/JfGnQqAv4RU
+      div(style='height:430px; overflow-y: scroll',
+          tableOutput('clusterTableUp')),
+      div(style='height:430px; overflow-y: scroll',
+          tableOutput('clusterTableDown'))
       ),
 
     
     # Show plots from the sc data
     mainPanel(
             fluidRow(
-                    splitLayout(cellWidths = c("50%", "50%"),  plotOutput("tsnePlot",width="600px",height="400px"),
-                                plotOutput("tsneExpPlot",width="600px",height="400px"))
+                    splitLayout(cellWidths = c("50%", "50%"),  plotlyOutput("tsnePlot"), #,width="600px",height="400px"
+                                plotOutput("tsneExpPlot")) #,width="600px",height="400px"
             ),
-            #fluidRow(splitLayout(cellWidths = c('50%', '50%'), downloadButton('downloadTsnePlot', 'Download tSNE Plot'), downloadButton('downloadExpTsnePlot', 'Download Exp tSNE Plot') ) ),
-           
+            
             fluidRow(
-                    splitLayout(cellWidths = c("50%", "50%"),  plotOutput("tsnePlotVar",width="600px",height="400px"),
-                                plotOutput("barExpPlot",width="600px",height="400px"))
+                    splitLayout(cellWidths = c("50%", "50%"),  plotlyOutput("tsnePlotVar"), #,width="600px",height="400px"
+                                plotOutput("barExpPlot")) #,width="600px",height="400px"
             ),
             
       
         #fluidRow(plotOutput('lineExpPlot')),
         fluidRow(
-                plotOutput('MAplot')
+                plotlyOutput('MAplot')
+        ),
+        div(class = "footer",
+            ("Created by Roman Sankowski - 2019 - 
+             Github: rsankowski
+             ")
         )
     )
   )
