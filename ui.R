@@ -5,16 +5,12 @@
 # http://shiny.rstudio.com
 #
 library(shiny)
+library(plotly)
+library(tidyr)
 load('20190131-mouse-eae-data.Robj')
 colors_many <- c("#E6194B","#3CB44B","#FFE119","#0082C8","#F58231","#911EB4","#46F0F0","#F032E6","#D2F53C","#FABEBE","#008080","#E6BEFF","#AA6E28","#FFFAC8","#800000","#AAFFC3","#808000","#FFD8B1","#000080","#808080","#FFFFFF","#000000","#8DD3C7","#FFFFB3","#BEBADA","#FB8072","#80B1D3","#FDB462","#B3DE69","#FCCDE5","#D9D9D9","#BC80BD","#CCEBC5")
 
-#library(parallel)
-
-# Calculate the number of cores
-#no_cores <- detectCores() - 1
-
-# Initiate cluster
-#cl <- makeCluster(no_cores)
+# for layout choose: https://stackoverflow.com/questions/38939827/footer-alignment-in-shiny-app-dashboard
 
 shinyUI(fluidPage(
 
@@ -27,7 +23,7 @@ shinyUI(fluidPage(
       selectInput("dataset", "Choose a dataset:", selected = names(data)[2],
                         list("All cells","Parenchyma & Perivascular Space","Meninges","Choroid Plexus","Blood")), 
       selectizeInput("gene", choices = colnames(data[[1]][[2]]),
-                 "Gene Expression Tsne - Enter Gene:", selected = 'Cx3cr1'),
+                 "Gene Expression Tsne - Enter Gene:", multiple = TRUE, selected = 'Cx3cr1'),
       selectInput("plot_variable", "Choose a variable:",
                   list("Condition","Population","Subpopulation", "Cluster","Compartment")), 
         numericInput("cluster",

@@ -7,7 +7,7 @@
 
 library(shiny)
 library(RColorBrewer)
-library(tidyr)
+library(stringr)
 library(Matrix)
 library(plotly)
 library(shinydashboard)
@@ -57,7 +57,9 @@ shinyServer(function(input, output) {
        
         #Plot tsne plot Gene expression
         output$tsneExpPlot <- renderPlot({
-                         l <- (rowSums(as.matrix(data[[input$dataset]][[2]][, colnames(data[[input$dataset]][[2]]) %in% unique(unlist(str_split(input$gene, c(',',', ', ' ', ' , '))))]))) + 0.1
+                        #gene <- c()
+                        #.gene <- for (i in length(input$gene)) {paste(gene, input$gene[i], sep = ', ')}
+                        l <- (rowSums(as.matrix(data[[input$dataset]][[2]][, colnames(data[[input$dataset]][[2]]) %in% unique(unlist(stringr::str_split(input$gene, c(',',', ', ' ', ' , '))))]))) + 0.1
                         mi <- min(l)
                         ma <- max(l)
                         ColorRamp <- colorRampPalette(c("darkblue","lightblue2","yellow","red2"))(100)
@@ -71,14 +73,14 @@ shinyServer(function(input, output) {
                                 geom_point(size = 3, pch = 21, stroke=0.25) +
                                 scale_fill_gradientn('', colors = ColorRamp) +
                                 theme_void() +
-                                labs(title = input$gene)
+                                labs(title = paste(input$gene, collapse=', '))
                 
                         expr
         })
         
         
         output$barExpPlot <- renderPlot({
-                l <- (rowSums(as.matrix(data[[input$dataset]][[2]][, colnames(data[[input$dataset]][[2]]) %in% unique(unlist(str_split(input$gene, c(',',', ', ' ', ' , '))))]))) + 0.1
+                l <- (rowSums(as.matrix(data[[input$dataset]][[2]][, colnames(data[[input$dataset]][[2]]) %in% unique(unlist(stringr::str_split(input$gene, c(',',', ', ' ', ' , '))))]))) + 0.1
                 
                 kk <- dplyr::bind_cols(data.frame('l'=l), data.frame('Cluster'=data[[input$dataset]][[1]][,c('Cluster')], 'Subpopulation'=data[[input$dataset]][[1]][,c('Subpopulation')], 'Population'=data[[input$dataset]][[1]][,c('Population')]))
                 colors_many <- c("#E6194B","#3CB44B","#FFE119","#0082C8","#F58231","#911EB4","#46F0F0","#F032E6","#D2F53C","#FABEBE","#008080","#E6BEFF","#AA6E28","#FFFAC8","#800000","#AAFFC3","#808000","#FFD8B1","#000080","#808080","#FFFFFF","#000000","#8DD3C7","#FFFFB3","#BEBADA","#FB8072","#80B1D3","#FDB462","#B3DE69","#FCCDE5","#D9D9D9","#BC80BD","#CCEBC5",toupper(c('#8dd3c7','#ffffb3','#bebada','#fb8072','#80b1d3','#fdb462','#b3de69','#fccde5','#d9d9d9','#bc80bd','#ccebc5')))
@@ -89,7 +91,7 @@ shinyServer(function(input, output) {
                         stat_summary(fun.data = mean_cl_normal, geom = "errorbar",width = 0) +
                         scale_fill_manual('Subpopulation', values = rev(colors_many)) +
                         theme_minimal() +
-                        labs(title = input$gene) +
+                        labs(title = paste(input$gene, collapse=', ')) +
                         facet_grid(.~Population,
                                    scales = 'free_x',
                                    drop = T,
