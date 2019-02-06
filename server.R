@@ -5,28 +5,28 @@
 # http://shiny.rstudio.com
 #
 
-library(shiny)
-library(RColorBrewer)
-library(stringr)
-library(Matrix)
-library(plotly)
-library(shinydashboard)
-
 load('20190131-mouse-eae-data.Robj')
 colors_many <- c("#E6194B","#3CB44B","#FFE119","#0082C8","#F58231","#911EB4","#46F0F0","#F032E6","#D2F53C","#FABEBE","#008080","#E6BEFF","#AA6E28","#FFFAC8","#800000","#AAFFC3","#808000","#FFD8B1","#000080","#808080","#FFFFFF","#000000","#8DD3C7","#FFFFB3","#BEBADA","#FB8072","#80B1D3","#FDB462","#B3DE69","#FCCDE5","#D9D9D9","#BC80BD","#CCEBC5")
 
+#createLink <- function(val) {
+#  sprintf('<a href="https://www.ncbi.nlm.nih.gov/gene?term=(%s[gene]) AND (Mus musculus[orgn]) AND alive[prop] NOT newentry[gene]&sort=weight" target="_blank" >%s</a>',val,val)  #https://www.ncbi.nlm.nih.gov/gene?term=(cx3cr1[gene])%20AND%20(Mus%20musculus[orgn])%20AND%20alive[prop]%20NOT%20newentry[gene]&sort=weight
+#}
+ToLink <- function(txt) {
+  paste0('<a href="https://www.ncbi.nlm.nih.gov/gene?term=(' ,txt,'[gene]) AND (Mus musculus[orgn]) AND alive[prop] NOT newentry[gene]&sort=weight" target="_blank" >%s</a>')
+}
 
 shinyServer(function(input, output) {
         
         #plot Tsne with cluster number
-        output$tsnePlot <- renderPlotly({
+        output$tsnePlot <- renderPlot({
         
                tsne <-ggplot(data[[input$dataset]][[1]], aes(V1, V2, fill = Cluster)) +
-                        geom_point(pch = 21, size = 2, stroke = 0.1) +
+                        geom_point(pch = 21, size = 3, stroke = 0.25) +
                         theme_void() +
                         scale_fill_manual('',values = rev(colors_many)) +
                         labs(title = 'Clusters')
-               ggplotly(tsne)
+               #ggplotly(tsne)
+               tsne
         })
         
         #Plot Tsne with group labels
@@ -102,44 +102,64 @@ shinyServer(function(input, output) {
         })
         
         
-        output$MAplot <- renderPlotly({
+        output$MAplot <- renderPlot({
                 a <- data[[input$dataset]][[3]][[as.character(input$cluster)]]
                 a <- cbind(gsub('_.*', '',rownames(a)),a)
                 colnames(a) <- c('Gene', 'Mean overall', 'Mean in Clust', 'fc', 'p_Value', 'adj_p_Value')
                 ma <- ggplot(a, aes(-log10(p_Value), log2(fc))) +
-                        geom_point(color = 'red', size=2, alpha=.5) +
+                        geom_point(color = 'red', size=3, alpha=.5) +
                         geom_text(label=as.character(a$Gene)) +
                         labs(title = paste0('Cluster ', input$cluster), x='-log10(p-Value)', y='log2(fold change)') +
                         theme_minimal() +
                         geom_hline(yintercept = 0, size=1, color='red')
-                ggplotly(ma)
+                #ggplotly(ma)
+                ma
         })
         
         
         
         #plot upregulated genes
-        output$clusterTableUp <- renderTable({
+        output$clusterTableUp <- renderDataTable({
                         a <- data[[input$dataset]][[3]][[as.character(input$cluster)]]
-                        a <- cbind(gsub('_.*|\\|.*', '',rownames(a)),a)
-                        colnames(a) <- c('Gene', 'Mean overall', 'Mean in Clust', 'fc', 'p-Value', 'adj. p-Value')
+                        rownames(a) <- gsub('_.*|\\|.*', '',rownames(a))
+                        colnames(a) <- c('Mean overall', 'Mean in Clust', 'fc', 'p-Value', 'adj. p-Value')
                         #a$Gene <- str_trunc(as.character(a$Gene), 15, "right")
-                        a[a$fc>1,]
                         
-
-        }, caption=paste("Upregulated Genes"),
-        caption.placement = getOption("xtable.caption.placement", "top"),
-        caption.width = getOption("xtable.caption.width")
-        )
+                        datatable(
+                          a[a$fc>1,], selection = 'none', class = 'cell-border strip hover', options = list(autoWidth = TRUE)
+                        ) %>% formatStyle(0, cursor = 'pointer') %>% 
+                          formatRound(c(1:5), 2) 
+                        
+        })
+        
+        observeEvent(input$clusterTableUp_cell_clicked, {
+          info = input$clusterTableUp_cell_clicked
+          
+          if (!is.null(info$value) ) { # Not null means we have a legitimate address
+            
+            addr = info$value
+            
+            ToLink(addr)
+            # Here you need to convert this addr data into the search parameter and send off to google and present the results somewhere
+            
+            # So you will need to invoke a search (probably easy but I dont know api but see example for using a  url shortening AI here  https://mark.shinyapps.io/googleAuthRexample/
+            
+            # Good luck !
+            
+          }
+          
+        })
         
         #Plot downregulated genes
-        output$clusterTableDown <- renderTable({
+        output$clusterTableDown <- renderDataTable({
                 
                 a <- data[[input$dataset]][[3]][[as.character(input$cluster)]]
-                a <- cbind(gsub('_.*|\\|.*', '',rownames(a)),a)
-                colnames(a) <- c('Gene','Mean overall', 'Mean in Clust', 'fc', 'p-Value', 'adj. p-Value')
-                #a$Gene <- str_trunc(as.character(a$Gene), 15, "right")
-                a[a$fc<1,]
-             
+                rownames(a) <- gsub('_.*|\\|.*', '',rownames(a))
+                colnames(a) <- c('Mean overall', 'Mean in Clust', 'fc', 'p-Value', 'adj. p-Value')
+                datatable(
+                  a[a$fc<1,], selection = 'none', class = 'cell-border strip hover', options = list(autoWidth = TRUE)
+                ) %>% formatStyle(0, cursor = 'pointer') %>% 
+                  formatRound(c(1:5), 2) 
                 
         }, caption=paste("Downregulated Genes"),
         caption.placement = getOption("xtable.caption.placement", "top"),
